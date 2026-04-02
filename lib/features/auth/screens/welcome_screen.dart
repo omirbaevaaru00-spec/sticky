@@ -1,112 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/localization/app_localizations.dart';
-import '../../../main.dart';
-
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  void _showLanguageDialog(BuildContext context) {
-    final loc = AppLocalizations.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                loc.chooseLanguage,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                title: Text(loc.russian),
-                onTap: () {
-                  localeController.setLocale('ru');
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: Text(loc.kazakh),
-                onTap: () {
-                  localeController.setLocale('kk');
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFC9D2FF),
+      backgroundColor: const Color(0xFF03060D),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
+        child: SizedBox.expand(
+          child: Stack(
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: TextButton(
-                  onPressed: () => _showLanguageDialog(context),
-                  child: const Text(
-                    'RU / KZ',
+              Positioned(
+                top: 20,
+                right: 20,
+                child: IconButton(
+                  onPressed: () {},
+                  icon: const Icon(
+                    Icons.language,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+
+              const Positioned(
+                left: 97,
+                top: 248,
+                child: SizedBox(
+                  width: 246,
+                  height: 51,
+                  child: Text(
+                    'WELCOME',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
                     ),
                   ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                loc.welcomeTitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                loc.welcomeSubtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 32),
-              OutlinedButton(
-                onPressed: () {
-                  context.go('/quiz');
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 12,
+
+              const Positioned(
+                left: 40,
+                right: 40,
+                top: 318,
+                child: Text(
+                  'Найди университет, который подходит тебе.\n'
+                  'Сравнивай программы и выбери свое будущее.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF8E95A3),
+                    fontSize: 14,
+                    height: 1.45,
+                    fontWeight: FontWeight.w400,
                   ),
-                  shape: const StadiumBorder(),
                 ),
-                child: Text(loc.continueText),
               ),
-              const Spacer(),
+
+              Positioned(
+                left: 212,
+                top: 641,
+                child: SizedBox(
+                  width: 158,
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      context.go('/quiz');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF35D9CC),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'пропустить',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

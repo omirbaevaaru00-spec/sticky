@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/localization/app_localizations.dart';
-
 class InterestQuizScreen extends StatefulWidget {
   const InterestQuizScreen({super.key});
 
@@ -12,69 +10,175 @@ class InterestQuizScreen extends StatefulWidget {
 
 class _InterestQuizScreenState extends State<InterestQuizScreen> {
   final List<String> interests = [
-    'IT',
-    'Business',
-    'Medicine',
-    'Design',
-    'Engineering',
-    'Education',
+    'IT и технологии',
+    'Медицина',
+    'Бизнес и экономика',
+    'Гранты',
+    'Дизайн и креатив',
+    'Юриспруденция',
+    'Педагогика',
+    'Инженерия',
+    'Бакалавриат',
+    'Колледж',
+    'Магистратура',
   ];
 
-  final Set<String> selected = {};
+  final Set<String> selectedInterests = {};
 
-  void toggleInterest(String value) {
+  void toggleInterest(String interest) {
     setState(() {
-      if (selected.contains(value)) {
-        selected.remove(value);
+      if (selectedInterests.contains(interest)) {
+        selectedInterests.remove(interest);
       } else {
-        selected.add(value);
+        selectedInterests.add(interest);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
-
     return Scaffold(
-      appBar: AppBar(title: Text(loc.quizTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              loc.quizTitle,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              loc.quizSubtitle,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: interests.map((item) {
-                  return ChoiceChip(
-                    label: Text(item),
-                    selected: selected.contains(item),
-                    onSelected: (_) => toggleInterest(item),
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
+      backgroundColor: const Color(0xFF05070C),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton(
                 onPressed: () {
-                  context.go('/main');
+                  context.pop();
                 },
-                child: Text(loc.continueText),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
-            ),
-          ],
+              const SizedBox(height: 36),
+              const Center(
+                child: Text(
+                  'Выбери, что тебе\nинтересно',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Center(
+                child: Text(
+                  'Мы настроим ленту под твои цели,\nинтересы и планы на будущее',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 34),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 14,
+                    children: interests.map((interest) {
+                      final isSelected =
+                          selectedInterests.contains(interest);
+
+                      return GestureDetector(
+                        onTap: () => toggleInterest(interest),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF9E9E9E),
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: Text(
+                            interest,
+                            style: const TextStyle(
+                              color: Color(0xFF111111),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: SizedBox(
+                  width: 328,
+                  height: 40,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2A2F3A),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              context.go('/main');
+                            },
+                            child: const Text(
+                              'Пропустить',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF35C9BC),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              context.go('/main');
+                            },
+                            child: const Text(
+                              'Далее',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

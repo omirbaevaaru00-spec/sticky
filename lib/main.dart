@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/router/app_router.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/localization/locale_controller.dart';
-import 'core/routes/app_router.dart';
 
 final LocaleController localeController = LocaleController();
 
@@ -30,6 +30,8 @@ class MyApp extends StatelessWidget {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           routerConfig: AppRouter.router,
+
+          // 🔥 МІНЕ ОСЫ МАҢЫЗДЫ
           locale: localeController.locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
