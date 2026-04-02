@@ -47,7 +47,7 @@ class _InterestQuizScreenState extends State<InterestQuizScreen> {
             children: [
               IconButton(
                 onPressed: () {
-                  context.pop();
+                  context.go('/');
                 },
                 icon: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -90,8 +90,7 @@ class _InterestQuizScreenState extends State<InterestQuizScreen> {
                     spacing: 12,
                     runSpacing: 14,
                     children: interests.map((interest) {
-                      final isSelected =
-                          selectedInterests.contains(interest);
+                      final isSelected = selectedInterests.contains(interest);
 
                       return GestureDetector(
                         onTap: () => toggleInterest(interest),
