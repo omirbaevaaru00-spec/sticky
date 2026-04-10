@@ -1,187 +1,108 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../../../core/localization/locale_controller.dart';
+import '../../../core/router/route_names.dart';
+import '../../../widgets/university_card.dart';
+import '../../../widgets/university_model.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final List<University> _universities = List.from(kazakhUniversities);
+
+  String get _locale => LocaleController.instance.locale.languageCode;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF05070C),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // ── App Bar ───────────────────────────────────
+              _AppBar(),
 
-            /// Top bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  const SizedBox(width: 28),
-                  const Expanded(
-                    child: Center(
-                      child: Icon(
-                        Icons.push_pin,
-                        color: Colors.white,
-                        size: 38,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notification_add,
-                      color: Color(0xFF6F7480),
-                      size: 30,
-                    ),
-                  ),
-                ],
+              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+
+              // ── Лента вузов ───────────────────────────────
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  itemCount: _universities.length,
+                  itemBuilder: (context, index) {
+                    final uni = _universities[index];
+                    return UniversityFeedCard(
+                      university: uni,
+                      onTap: () {
+                        context.push(
+                          '/university/${uni.id}',
+                          extra: uni,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-
-            const SizedBox(height: 10),
-            const Divider(color: Color(0xFF1C2230), height: 1),
-
-            /// Feed
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(top: 10, bottom: 12),
-                children: const [
-                  UniversityFeedCard(
-                    logoPath: 'assets/images/sdu_logo.png',
-                    title: 'SDU University',
-                    subtitle: 'Ведущий частный некоммерческий вуз',
-                    city: 'в Алматы',
-                    imagePath: 'assets/images/sdu.jpg',
-                  ),
-                  SizedBox(height: 6),
-                  Divider(color: Color(0xFF1C2230), height: 1),
-                  UniversityFeedCard(
-                    logoPath: 'assets/images/kbtu_logo.png',
-                    title: 'KBTU University',
-                    subtitle: 'Лучший Технический университет',
-                    city: 'Казахстана',
-                    imagePath: 'assets/images/kbtu.jpg',
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class UniversityFeedCard extends StatelessWidget {
-  final String logoPath;
-  final String title;
-  final String subtitle;
-  final String city;
-  final String imagePath;
+// ─────────────────────────────────────────────
+// App Bar
+// ─────────────────────────────────────────────
 
-  const UniversityFeedCard({
-    super.key,
-    required this.logoPath,
-    required this.title,
-    required this.subtitle,
-    required this.city,
-    required this.imagePath,
-  });
-
+class _AppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      color: const Color(0xFF3B3B8E),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
         children: [
-          /// Header info
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(6),
-                child: ClipOval(
-                  child: Image.asset(
-                    logoPath,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFFD8D8D8),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        city,
-                        style: const TextStyle(
-                          color: Color(0xFFD8D8D8),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // Пустое место слева для баланса
+          const SizedBox(width: 40),
 
-          const SizedBox(height: 14),
-
-          /// Main image
-          Padding(
-            padding: const EdgeInsets.only(left: 36),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+          // Логотип по центру
+          Expanded(
+            child: Center(
               child: Image.asset(
-                imagePath,
-                width: 342,
-                height: 274,
-                fit: BoxFit.cover,
+                'assets/images/nova_logo.png',
+                height: 32,
+                fit: BoxFit.contain,
+                // Делаем логотип белым через colorFilter
+                color: Colors.white,
+                colorBlendMode: BlendMode.srcIn,
               ),
             ),
           ),
 
-          const SizedBox(height: 10),
-
-          /// Favorite icon
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: EdgeInsets.only(right: 10),
-              child: Icon(
-                Icons.star_border_rounded,
-                color: Color(0xFF8A8F99),
-                size: 28,
+          // Поиск справа
+          GestureDetector(
+            onTap: () => context.push(RouteNames.search),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.search_rounded,
+                color: Colors.white,
+                size: 22,
               ),
             ),
           ),

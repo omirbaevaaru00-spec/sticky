@@ -1,4 +1,3 @@
-
 name: stiky
 description: "Stiky Flutter app"
 publish_to: 'none'
@@ -16,11 +15,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^3.15.2
   firebase_auth: ^5.7.0
-  cloud_firestore: ^5.6.12   # если используешь БД
-  firebase_storage: ^12.0.0 # если используешь файлы
+  cloud_firestore: ^5.6.12
+  firebase_storage: ^12.0.0
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.1
   go_router: ^14.8.1
+  logger: ^2.0.2
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -29,5 +30,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-assets:
-  - assets/images/
+
+  assets:
+    - assets/images/nova_logo.png

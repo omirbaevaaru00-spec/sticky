@@ -7,13 +7,9 @@ import 'core/router/app_router.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/localization/locale_controller.dart';
 
-final LocaleController localeController = LocaleController();
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   runApp(const MyApp());
 }
 
@@ -23,12 +19,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: localeController,
+      animation: LocaleController.instance,
       builder: (context, _) {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           routerConfig: AppRouter.router,
-          locale: localeController.locale,
+          locale: LocaleController.instance.locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
             AppLocalizations.delegate,

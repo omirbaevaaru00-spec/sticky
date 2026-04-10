@@ -1,26 +1,30 @@
-/// Константы имён и путей маршрутов.
-///
-/// Используем константы вместо строк в коде, чтобы:
-/// 1. Автодополнение IDE подсказывало имена.
-/// 2. Опечатка вызовет ошибку компиляции, а не баг в рантайме.
-/// 3. Переименование маршрута — в одном месте.
+/// Константы маршрутов NOVA.
 class RouteNames {
-  // ── Пути (paths) — используем в context.go() ─────────────────
-  /// Сплэш-экран (начальный маршрут).
-  static const String splash = '/';
+  RouteNames._();
 
-  /// Экран входа.
-  static const String login = '/login';
+  // ── Сплэш ─────────────────────────────────────────────────
+  static const String splash            = '/';
 
-  /// Вкладка «Главная».
-  static const String main = '/home/main';
+  // ── Онбординг (язык выбирается на WelcomeScreen) ──────────
+  static const String welcome           = '/welcome';
+  static const String interestQuiz      = '/interest-quiz';
 
-  /// Вкладка «Профиль».
-  static const String profile = '/home/profile';
+  // ── Авторизация (по требованию) ───────────────────────────
+  static const String login             = '/login';
+  static const String register          = '/register';
+  static const String forgotPassword    = '/forgot-password';
+  static const String profileSetup      = '/profile-setup';
 
-  // ── Имена (names) — используем в GoRoute(name: ...) ──────────
-  static const String splashName = 'splash';
-  static const String loginName = 'login';
-  static const String mainName = 'main';
-  static const String profileName = 'profile';
+  // ── Основные экраны ───────────────────────────────────────
+  static const String home              = '/main/home';
+  static const String notifications     = '/main/notifications';
+  static const String profile           = '/main/profile';
+
+  // ── Детальные экраны ──────────────────────────────────────
+  static const String search            = '/search';
+  static const String filters           = '/filters';
+  static const String favorites         = '/favorites';
+  static const String savedSearches     = '/saved-searches';
+  static const String newsFeed          = '/news';
+  static const String helpCenter        = '/help-center';
 }

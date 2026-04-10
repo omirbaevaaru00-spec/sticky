@@ -1,79 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/home/ui/home_shell.dart';
-import '../../features/home/ui/main_tab.dart';
-import '../../features/home/ui/profile_tab.dart';
-import '../../features/login/ui/login_screen.dart';
-import '../../features/splash/ui/splash_screen.dart';
+import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/welcome_screen.dart';
+import '../../features/auth/screens/interest_quiz_screen.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/profile_setup_screen.dart';
+import '../../features/home/screens/main_navigation_screen.dart';
+import '../../features/home/screens/home_screen.dart';
+import '../../features/home/screens/search_screen.dart';
+// import '../../features/home/screens/filters_screen.dart';
+import '../../features/home/screens/favorites_screen.dart';
+import '../../features/home/screens/saved_searches_screen.dart';
+import '../../features/home/screens/news_feed_screen.dart';
+import '../../features/home/screens/notifications_screen.dart';
+import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/help_center_screen.dart';
+import '../../features/university/screens/university_detail_screen.dart';
 import 'route_names.dart';
 
-/// Конфигурация навигации (GoRouter).
-///
-/// Структура маршрутов:
-/// ```
-/// /               → SplashScreen
-/// /login          → LoginScreen
-/// /home           → HomeShell (ShellRoute с BottomNavigationBar)
-///   /home/main    → MainTab
-///   /home/profile → ProfileTab
-/// ```
-///
-/// **Redirect guard**: если пользователь попал на `/home/*`
-/// без авторизации, его перекинет на `/login` (и наоборот).
-/// Но основная навигация при смене auth-статуса идёт через
-/// BlocListener в экранах — это явнее и проще для понимания.
 class AppRouter {
-  /// Создаёт и возвращает настроенный [GoRouter].
-  static GoRouter create() {
-    return GoRouter(
-      // Начальный маршрут — сплэш.
-      initialLocation: RouteNames.splash,
+  AppRouter._();
 
-      // Список маршрутов.
-      routes: [
-        // ── Splash ───────────────────────────────────────────
-        GoRoute(
-          name: RouteNames.splashName,
-          path: RouteNames.splash,
-          builder: (context, state) => const SplashScreen(),
-        ),
+  static final GoRouter router = GoRouter(
+    // Сплэш всегда первый — он сам решает куда идти
+    initialLocation: RouteNames.splash,
 
-        // ── Login ────────────────────────────────────────────
-        GoRoute(
-          name: RouteNames.loginName,
-          path: RouteNames.login,
-          builder: (context, state) => const LoginScreen(),
-        ),
+    routes: [
+      // ── Сплэш ─────────────────────────────────────────────
+      GoRoute(
+        path: RouteNames.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
 
-        // ── Home (ShellRoute + BottomNav) ────────────────────
-        ShellRoute(
-          builder: (context, state, child) => HomeShell(child: child),
-          routes: [
-            GoRoute(
-              name: RouteNames.mainName,
-              path: RouteNames.main,
-              builder: (context, state) => const MainTab(),
-            ),
-            GoRoute(
-              name: RouteNames.profileName,
-              path: RouteNames.profile,
-              builder: (context, state) => const ProfileTab(),
-            ),
-          ],
-        ),
-      ],
+      // ── Онбординг (только Welcome + Quiz) ─────────────────
+      // Язык выбирается прямо на WelcomeScreen
+      GoRoute(
+        path: RouteNames.welcome,
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.interestQuiz,
+        builder: (context, state) => const InterestQuizScreen(),
+      ),
 
-      // ── Страница ошибки (404) ──────────────────────────────
-      // Стиль текста берём из темы, чтобы он вписывался в дизайн.
-      errorBuilder: (context, state) => Scaffold(
-        body: Center(
-          child: Text(
-            'Страница не найдена: ${state.uri}',
-            style: Theme.of(context).textTheme.bodyLarge,
+      // ── Авторизация (по требованию, не обязательно) ────────
+      GoRoute(
+        path: RouteNames.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.forgotPassword,
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.profileSetup,
+        builder: (context, state) => const ProfileSetupScreen(),
+      ),
+
+      // ── Основная оболочка с BottomNav ──────────────────────
+      ShellRoute(
+        builder: (context, state, child) =>
+            MainNavigationScreen(child: child),
+        routes: [
+          GoRoute(
+            path: RouteNames.home,
+            builder: (context, state) => const HomeScreen(),
           ),
+          GoRoute(
+            path: RouteNames.notifications,
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.profile,
+            builder: (context, state) => const ProfileScreen(),
+          ),
+        ],
+      ),
+
+      // ── Детальные экраны ───────────────────────────────────
+      GoRoute(
+        path: '/university/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return UniversityDetailScreen(id : id);
+        },
+      ),
+      // GoRoute(
+      //   path: RouteNames.filters,
+      //   builder: (context, state) => const FiltersScreen(),
+      // ),
+      GoRoute(
+        path: RouteNames.favorites,
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.savedSearches,
+        builder: (context, state) => const SavedSearchesScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.newsFeed,
+        builder: (context, state) => const NewsFeedScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.helpCenter,
+        builder: (context, state) => const HelpCenterScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.search,
+        builder: (context, state) => const SearchScreen(),
+      ),
+    ],
+
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Text(
+          'Страница не найдена: ${state.uri}',
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
