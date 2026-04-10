@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/interest_quiz_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
@@ -30,10 +29,10 @@ class AppRouter {
 
     routes: [
       // ── Сплэш ─────────────────────────────────────────────
-      GoRoute(
-        path: RouteNames.splash,
-        builder: (context, state) => const SplashScreen(),
-      ),
+      // GoRoute(
+      //   path: RouteNames.splash,
+      //   builder: (context, state) => const SplashScreen(),
+      // ),
 
       // ── Онбординг (только Welcome + Quiz) ─────────────────
       // Язык выбирается прямо на WelcomeScreen
