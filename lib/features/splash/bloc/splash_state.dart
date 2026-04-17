@@ -1,32 +1,27 @@
-// import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
-// /// Состояния splash-экрана.
-// enum SplashStatus {
-//   /// Начальное состояние — проверка ещё не запущена.
-//   initial,
+enum SplashStatus {
+  initial,
+  loading,
+  authenticated,
+  unauthenticated,
+}
 
-//   /// Идёт проверка авторизации.
-//   loading,
+class SplashState extends Equatable {
+  const SplashState({
+    this.status = SplashStatus.initial,
+  });
 
-//   /// Пользователь авторизован — переход на главный экран.
-//   authenticated,
+  final SplashStatus status;
 
-//   /// Пользователь не авторизован — переход на экран логина.
-//   unauthenticated,
-// }
+  SplashState copyWith({
+    SplashStatus? status,
+  }) {
+    return SplashState(
+      status: status ?? this.status,
+    );
+  }
 
-// /// Состояние [SplashCubit].
-// class SplashState extends Equatable {
-//   const SplashState({this.status = SplashStatus.initial});
-
-//   /// Текущий статус проверки.
-//   final SplashStatus status;
-
-//   /// Создаёт копию с изменённым полем.
-//   SplashState copyWith({SplashStatus? status}) {
-//     return SplashState(status: status ?? this.status);
-//   }
-
-//   @override
-//   List<Object?> get props => [status];
-// }
+  @override
+  List<Object?> get props => [status];
+}

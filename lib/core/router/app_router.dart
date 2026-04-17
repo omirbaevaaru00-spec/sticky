@@ -18,6 +18,7 @@ import '../../features/home/screens/notifications_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/help_center_screen.dart';
 import '../../features/university/screens/university_detail_screen.dart';
+import '../../features/splash/ui/splash_page.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -25,14 +26,14 @@ class AppRouter {
 
   static final GoRouter router = GoRouter(
     // Сплэш всегда первый — он сам решает куда идти
-    initialLocation: RouteNames.welcome,
+    initialLocation: RouteNames.splash,
 
     routes: [
       // ── Сплэш ─────────────────────────────────────────────
-      // GoRoute(
-      //   path: RouteNames.splash,
-      //   builder: (context, state) => const SplashScreen(),
-      // ),
+      GoRoute(
+        path: RouteNames.splash,
+        builder: (context, state) => const SplashPage(),
+      ),
 
       // ── Онбординг (только Welcome + Quiz) ─────────────────
       // Язык выбирается прямо на WelcomeScreen

@@ -13,3 +13,18 @@
 //   @override
 //   Future<bool> isAuthenticated() => _datasource.isAuthenticated();
 // }
+import 'package:stiky/data/auth/auth_remote_datasource.dart';
+import 'package:stiky/data/auth/auth_repository.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  AuthRepositoryImpl({
+    required AuthRemoteDatasource datasource,
+  }) : _datasource = datasource;
+
+  final AuthRemoteDatasource _datasource;
+
+  @override
+  Future<bool> isAuthenticated() async {
+    return _datasource.isAuthenticated();
+  }
+}

@@ -22,3 +22,22 @@
 //     return session != null;
 //   }
 // }
+
+import 'package:firebase_auth/firebase_auth.dart';
+
+abstract class AuthRemoteDatasource {
+  Future<bool> isAuthenticated();
+}
+
+class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
+  AuthRemoteDatasourceImpl({
+    FirebaseAuth? firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+
+  final FirebaseAuth _firebaseAuth;
+
+  @override
+  Future<bool> isAuthenticated() async {
+    return _firebaseAuth.currentUser != null;
+  }
+}
