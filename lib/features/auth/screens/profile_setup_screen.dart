@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/router/route_names.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -19,9 +20,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
+  // void _continue() {
+  //   context.go('/main');
+  // }
   void _continue() {
-    context.go('/main');
-  }
+  context.go(RouteNames.home); // было '/main', должно быть '/main/home'
+}
 
   @override
   Widget build(BuildContext context) {
