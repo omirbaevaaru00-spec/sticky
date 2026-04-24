@@ -137,10 +137,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:stiky/features/login/ui/login_screen.dart';
 
 import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/interest_quiz_screen.dart';
-import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/home/screens/main_navigation_screen.dart';

@@ -258,9 +258,9 @@ class _LoginScreenState extends State<LoginScreen>
                       onTap: _login,
                     ),
                     const SizedBox(height: 20),
-                    const OrDivider(),
+                    // const OrDivider(),
                     const SizedBox(height: 16),
-                    const GoogleSignInButton(),
+                    // const GoogleSignInButton(),
                     const SizedBox(height: 24),
 
 

@@ -1,8 +1,9 @@
-/// Репозиторий аутентификации.
-///
-/// Абстракция над источником данных — позволяет
-/// подменить реализацию в тестах.
+import 'package:stiky/core/models/user_model.dart';
+
 abstract class AuthRepository {
-  /// Проверяет, авторизован ли пользователь.
+  Stream<UserModel?> get user;
+
   Future<bool> isAuthenticated();
+  Future<UserModel?> signInWithGoogle();
+  Future<void> signOut();
 }
