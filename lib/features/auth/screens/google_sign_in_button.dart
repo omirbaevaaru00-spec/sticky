@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,13 +6,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stiky/core/router/route_names.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class GoogleSignInButton extends StatefulWidget {
+class GoogleSignInButton extends StatefulWidget { 
   const GoogleSignInButton({super.key});
 
   @override
-  State<GoogleSignInButton> createState() => _GoogleSignInButtonState();
+  State<GoogleSignInButton> createState() => _GoogleSignInButtonState(); 
 }
 
 class _GoogleSignInButtonState extends State<GoogleSignInButton> {
@@ -22,6 +22,9 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     setState(() => _loading = true);
     HapticFeedback.lightImpact();
     try {
+      // Сбрасываем кэш — каждый раз показываем выбор аккаунта
+      await GoogleSignIn().signOut();
+
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         setState(() => _loading = false);
@@ -34,23 +37,24 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         idToken: googleAuth.idToken,
       );
 
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-final user = userCredential.user!;
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user!;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('already_onboarded', true);
 
       final doc = await FirebaseFirestore.instance
-    .collection('users')
-    .doc(user.uid)
-    .get();
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-if (!mounted) return;
-if (doc.exists) {
-  context.go(RouteNames.home);
-} else {
-  context.go(RouteNames.profileSetup);
-}
+      if (!mounted) return;
+      if (doc.exists) {
+        context.go(RouteNames.home);
+      } else {
+        context.go(RouteNames.profileSetup);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
