@@ -55,47 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       ? _phoneController.text.trim()
       : _emailController.text.trim();
 
-  bool get _canProceed => _currentValue.isNotEmpty;
+  bool get _canProceed {
+    if (_mode == _InputMode.phone) {
+      return _phoneController.text.trim().length == 10;
+    }
+    return _emailController.text.trim().isNotEmpty;
+  }
 
-  // Future<void> _proceed() async {
-  //   if (!_canProceed || _loading) return;
-  //   setState(() {
-  //     _error = null;
-  //     _loading = true;
-  //   });
-  //   HapticFeedback.lightImpact();
-
-  //   try {
-  //     if (_mode == _InputMode.email) {
-  //       // Проверяем существует ли email — отправляем на экран пароля
-  //       final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(
-  //         _currentValue,
-  //       );
-  //       if (!mounted) return;
-  //       // Переходим на profile_setup (новый) или login (существующий)
-  //       if (methods.isEmpty) {
-  //         context.push(
-  //           RouteNames.profileSetup,
-  //           extra: {'email': _currentValue},
-  //         );
-  //       } else {
-  //         context.push(RouteNames.login, extra: {'email': _currentValue});
-  //       }
-  //     } else {
-  //       // Телефон — переходим дальше с номером
-  //       final phone = '+7${_phoneController.text.trim()}';
-  //       context.push(RouteNames.profileSetup, extra: {'phone': phone});
-  //     }
-  //   } on FirebaseAuthException catch (e) {
-  //     setState(() => _error = _firebaseMessage(e.code));
-  //   } catch (e) {
-  //     setState(() => _error = 'Что-то пошло не так. Попробуй ещё раз.');
-  //   } finally {
-  //     if (mounted) setState(() => _loading = false);
-  //   }
-  // }
-
-  // ── Замени метод _proceed() полностью ──
   Future<void> _proceed() async {
     if (!_canProceed || _loading) return;
     setState(() {
@@ -106,35 +72,69 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     try {
       if (_mode == _InputMode.email) {
-        // Пробуем войти — если пользователь есть, идём на login
-        // Если нет — на profile_setup
+        // ── Email flow ───────────────────────────────
         try {
           await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: _currentValue,
-            password: '________dummy________', // заведомо неверный пароль
+            password: '________dummy________',
           );
-          // Если каким-то чудом зашло (не должно) — на профиль
           if (!mounted) return;
           context.go(RouteNames.home);
         } on FirebaseAuthException catch (e) {
           if (!mounted) return;
-          if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-            // Новый пользователь
+          if (e.code == 'user-not-found' ||
+              e.code == 'invalid-credential') {
             context.push(
               RouteNames.profileSetup,
               extra: {'email': _currentValue},
             );
           } else if (e.code == 'wrong-password' ||
               e.code == 'INVALID_LOGIN_CREDENTIALS') {
-            // Пользователь существует — на экран пароля
-            context.push(RouteNames.login, extra: {'email': _currentValue});
+            context.push(RouteNames.login,
+                extra: {'email': _currentValue});
           } else {
             setState(() => _error = _firebaseMessage(e.code));
           }
         }
       } else {
+        // ── Телефон flow ─────────────────────────────
         final phone = '+7${_phoneController.text.trim()}';
-        context.push(RouteNames.profileSetup, extra: {'phone': phone});
+
+        await FirebaseAuth.instance.verifyPhoneNumber(
+          phoneNumber: phone,
+          timeout: const Duration(seconds: 60),
+          verificationCompleted: (PhoneAuthCredential credential) async {
+            final userCred = await FirebaseAuth.instance
+                .signInWithCredential(credential);
+            if (!mounted) return;
+            if (userCred.user != null) {
+              context.go(RouteNames.profileSetup,
+                  extra: {'phone': phone});
+            }
+          },
+          verificationFailed: (FirebaseAuthException e) {
+            if (mounted) {
+              setState(() {
+                _error = _firebaseMessage(e.code);
+                _loading = false;
+              });
+            }
+          },
+          codeSent: (String verificationId, int? resendToken) {
+            if (mounted) {
+              setState(() => _loading = false);
+              context.push(
+                RouteNames.phoneOtp,
+                extra: {
+                  'phone': phone,
+                  'verificationId': verificationId,
+                },
+              );
+            }
+          },
+          codeAutoRetrievalTimeout: (String verificationId) {},
+        );
+        return;
       }
     } catch (e) {
       setState(() => _error = 'Что-то пошло не так. Попробуй ещё раз.');
@@ -143,17 +143,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
-  // String _firebaseMessage(String code) {
-  //   switch (code) {
-  //     case 'invalid-email':
-  //       return 'Неверный формат email';
-  //     case 'too-many-requests':
-  //       return 'Слишком много попыток. Подожди немного.';
-  //     default:
-  //       return 'Ошибка. Попробуй ещё раз.';
-  //   }
-  // }
-  // ── Добавь в _firebaseMessage ──
   String _firebaseMessage(String code) {
     switch (code) {
       case 'invalid-email':
@@ -162,6 +151,10 @@ class _RegisterScreenState extends State<RegisterScreen>
         return 'Слишком много попыток. Подожди немного.';
       case 'network-request-failed':
         return 'Нет интернета. Проверь соединение.';
+      case 'invalid-phone-number':
+        return 'Неверный номер телефона. Проверь и попробуй снова.';
+      case 'quota-exceeded':
+        return 'Превышен лимит SMS. Попробуй позже.';
       default:
         return 'Ошибка. Попробуй ещё раз.';
     }
@@ -185,25 +178,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Верхняя навигация ────────────────────
+                    // ── Назад ────────────────────────────────
                     Row(
                       children: [
-                        // GestureDetector(
-                        //   onTap: () => context.pop(),
-                        //   child: const Icon(
-                        //     Icons.arrow_back_rounded,
-                        //     color: Color(0xFF3B3B8E),
-                        //     size: 24,
-                        //   ),
-                        // ),
                         GestureDetector(
                           onTap: () {
                             if (context.canPop()) {
                               context.pop();
                             } else {
-                              context.go(
-                                RouteNames.home,
-                              ); // или RouteNames.home
+                              context.go(RouteNames.welcome);
                             }
                           },
                           child: const Icon(
@@ -217,8 +200,8 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                     const SizedBox(height: 20),
 
-                    // ── Логотип NOVA ─────────────────────────
-                    _NovaLogo(),
+                    // ── Логотип ──────────────────────────────
+                    Image.asset('assets/images/nova_logo.png', height: 48),
 
                     const SizedBox(height: 28),
 
@@ -264,14 +247,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                               key: const ValueKey('phone'),
                               controller: _phoneController,
                               focusNode: _phoneFocus,
-                              onChanged: (_) => setState(() => _error = null),
+                              onChanged: (_) =>
+                                  setState(() => _error = null),
                               onSubmitted: (_) => _proceed(),
                             )
                           : _EmailField(
                               key: const ValueKey('email'),
                               controller: _emailController,
                               focusNode: _emailFocus,
-                              onChanged: (_) => setState(() => _error = null),
+                              onChanged: (_) =>
+                                  setState(() => _error = null),
                               onSubmitted: (_) => _proceed(),
                             ),
                     ),
@@ -281,6 +266,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       const SizedBox(height: 10),
                       Text(
                         _error!,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFFD32F2F),
                           fontSize: 13,
@@ -290,11 +276,9 @@ class _RegisterScreenState extends State<RegisterScreen>
 
                     const SizedBox(height: 14),
 
-                    // ── Политика конфиденциальности ──────────
+                    // ── Политика ─────────────────────────────
                     GestureDetector(
-                      onTap: () {
-                        // TODO: открыть политику
-                      },
+                      onTap: () {},
                       child: const Text(
                         'Ознакомьтесь с нашей Политикой Конфиденциальности',
                         textAlign: TextAlign.center,
@@ -315,16 +299,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                       enabled: _canProceed,
                       onTap: _proceed,
                     ),
+
                     const SizedBox(height: 16),
 
-                    // Разделитель
+                    // ── Разделитель ──────────────────────────
                     Row(
                       children: [
                         const Expanded(
-                          child: Divider(color: Color(0xFFDDDBEE)),
-                        ),
+                            child: Divider(color: Color(0xFFDDDBEE))),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             'или',
                             style: TextStyle(
@@ -334,12 +319,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                         ),
                         const Expanded(
-                          child: Divider(color: Color(0xFFDDDBEE)),
-                        ),
+                            child: Divider(color: Color(0xFFDDDBEE))),
                       ],
                     ),
 
                     const SizedBox(height: 16),
+
+                    // ── Google ───────────────────────────────
                     const GoogleSignInButton(),
 
                     const SizedBox(height: 24),
@@ -378,17 +364,6 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
       ),
     );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Логотип STICKY
-// ─────────────────────────────────────────────
-
-class _NovaLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset('assets/images/nova_logo.png', height: 48);
   }
 }
 
@@ -468,7 +443,8 @@ class _ToggleTab extends StatelessWidget {
                     ? const Color(0xFF2B2B8A)
                     : const Color(0xFF7B7BA8),
                 fontSize: 13,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight:
+                    selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
@@ -517,15 +493,13 @@ class _PhoneField extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Префикс KZ +7
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 16,
-                ),
+                    horizontal: 14, vertical: 16),
                 decoration: const BoxDecoration(
                   border: Border(
-                    right: BorderSide(color: Color(0xFFBBB9D8), width: 1),
+                    right: BorderSide(
+                        color: Color(0xFFBBB9D8), width: 1),
                   ),
                 ),
                 child: const Text(
@@ -549,20 +523,14 @@ class _PhoneField extends StatelessWidget {
                   onChanged: onChanged,
                   onSubmitted: onSubmitted,
                   style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 15,
-                  ),
+                      color: Color(0xFF1A1A1A), fontSize: 15),
                   decoration: const InputDecoration(
-                    hintText: 'Номер телефона',
+                    hintText: '7XX XXX XX XX',
                     hintStyle: TextStyle(
-                      color: Color(0xFF9E9CBB),
-                      fontSize: 15,
-                    ),
+                        color: Color(0xFF9E9CBB), fontSize: 15),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 16,
-                    ),
+                        horizontal: 14, vertical: 16),
                   ),
                 ),
               ),
@@ -618,15 +586,15 @@ class _EmailField extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onChanged: onChanged,
             onSubmitted: onSubmitted,
-            style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 15),
+            style: const TextStyle(
+                color: Color(0xFF1A1A1A), fontSize: 15),
             decoration: const InputDecoration(
-              hintText: 'Электронная почта',
-              hintStyle: TextStyle(color: Color(0xFF9E9CBB), fontSize: 15),
+              hintText: 'example@mail.com',
+              hintStyle:
+                  TextStyle(color: Color(0xFF9E9CBB), fontSize: 15),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
+                  horizontal: 16, vertical: 16),
             ),
           ),
         ),
@@ -660,7 +628,8 @@ class _ProceedButtonState extends State<_ProceedButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: widget.enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapDown:
+          widget.enabled ? (_) => setState(() => _pressed = true) : null,
       onTapUp: widget.enabled
           ? (_) {
               setState(() => _pressed = false);

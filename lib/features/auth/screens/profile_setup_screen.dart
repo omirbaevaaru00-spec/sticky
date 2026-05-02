@@ -1,3 +1,5 @@
+
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,18 +20,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _cityController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _nameFocus = FocusNode();
   final _cityFocus = FocusNode();
+  final _passwordFocus = FocusNode();
 
   bool _loading = false;
+  bool _obscurePassword = true;
   String? _error;
 
   late final AnimationController _animController;
   late final Animation<double> _fadeIn;
 
-  // email или phone из register_screen
   String? _email;
   String? _phone;
+  bool _isEmailFlow = false;
 
   @override
   void initState() {
@@ -48,8 +53,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
         _phone = extra['phone'] as String?;
       }
 
-      // Если пришли через Google — имя уже есть, подставляем
       final user = FirebaseAuth.instance.currentUser;
+      if (user == null && _email != null) {
+        setState(() => _isEmailFlow = true);
+      }
+
       if (user?.displayName != null && user!.displayName!.isNotEmpty) {
         _nameController.text = user.displayName!;
       }
@@ -60,15 +68,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
   void dispose() {
     _nameController.dispose();
     _cityController.dispose();
+    _passwordController.dispose();
     _nameFocus.dispose();
     _cityFocus.dispose();
+    _passwordFocus.dispose();
     _animController.dispose();
     super.dispose();
   }
 
-  bool get _canContinue =>
-      _nameController.text.trim().isNotEmpty &&
-      _cityController.text.trim().isNotEmpty;
+  bool get _canContinue {
+    final base = _nameController.text.trim().isNotEmpty &&
+        _cityController.text.trim().isNotEmpty;
+    if (_isEmailFlow) {
+      return base && _passwordController.text.length >= 6;
+    }
+    return base;
+  }
 
   Future<void> _continue() async {
     if (!_canContinue || _loading) return;
@@ -85,12 +100,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
       User? user = FirebaseAuth.instance.currentUser;
 
-      // Если пришли с email — создаём аккаунт
-      if (user == null && _email != null) {
-        // TODO: тут нужен пароль — перенаправь на экран создания пароля
-        // Пока создаём с временным паролем
-        setState(() => _error = 'Сначала войдите через Google или введите пароль');
-        return;
+      // ── Email регистрация ──────────────────────────────
+      if (_isEmailFlow && _email != null) {
+        try {
+          final cred = await FirebaseAuth.instance
+              .createUserWithEmailAndPassword(
+            email: _email!,
+            password: _passwordController.text,
+          );
+          user = cred.user;
+        } on FirebaseAuthException catch (e) {
+          setState(() => _error = _firebaseMessage(e.code));
+          return;
+        }
       }
 
       if (user == null) {
@@ -98,11 +120,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
         return;
       }
 
-      // Обновляем displayName в Firebase Auth
       await user.updateDisplayName(name);
 
-      // Сохраняем профиль в Firestore
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
         'uid': user.uid,
         'name': name,
         'city': city,
@@ -116,7 +139,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Ставим флаг онбординга
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('already_onboarded', true);
 
@@ -125,6 +147,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
       setState(() => _error = 'Что-то пошло не так. Попробуй ещё раз.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _firebaseMessage(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'Этот email уже зарегистрирован. Войди через «Войти».';
+      case 'weak-password':
+        return 'Пароль слишком простой. Минимум 6 символов.';
+      case 'invalid-email':
+        return 'Неверный формат email.';
+      case 'network-request-failed':
+        return 'Нет интернета. Проверь соединение.';
+      default:
+        return 'Ошибка. Попробуй ещё раз.';
     }
   }
 
@@ -146,7 +183,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Назад ────────────────────────────────
                     Row(
                       children: [
                         GestureDetector(
@@ -164,12 +200,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
                     const SizedBox(height: 32),
 
-                    // ── Иконка профиля ───────────────────────
                     Container(
                       width: 80,
                       height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDDDBEE),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDDDBEE),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -181,7 +216,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
                     const SizedBox(height: 24),
 
-                    // ── Заголовок ────────────────────────────
                     const Text(
                       'Расскажи о себе',
                       style: TextStyle(
@@ -204,7 +238,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
                     const SizedBox(height: 40),
 
-                    // ── Поле имени ───────────────────────────
+                    // ── Имя ──────────────────────────────────
                     _buildLabel('Имя / Никнейм'),
                     const SizedBox(height: 8),
                     _InputField(
@@ -218,17 +252,84 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
                     const SizedBox(height: 20),
 
-                    // ── Поле города ──────────────────────────
+                    // ── Город ────────────────────────────────
                     _buildLabel('Город'),
                     const SizedBox(height: 8),
                     _InputField(
                       controller: _cityController,
                       focusNode: _cityFocus,
                       hint: 'Например: Алматы',
-                      textInputAction: TextInputAction.done,
+                      textInputAction: _isEmailFlow
+                          ? TextInputAction.next
+                          : TextInputAction.done,
                       onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) => _continue(),
+                      onSubmitted: (_) {
+                        if (_isEmailFlow) {
+                          _passwordFocus.requestFocus();
+                        } else {
+                          _continue();
+                        }
+                      },
                     ),
+
+                    // ── Пароль (только email flow) ────────────
+                    if (_isEmailFlow) ...[
+                      const SizedBox(height: 20),
+                      _buildLabel('Придумай пароль'),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0xFFDDDBEE), width: 1.5),
+                        ),
+                        child: TextField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocus,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onChanged: (_) => setState(() {}),
+                          onSubmitted: (_) => _continue(),
+                          style: const TextStyle(
+                              color: Color(0xFF1A1A1A), fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Минимум 6 символов',
+                            hintStyle: const TextStyle(
+                                color: Color(0xFF9E9CBB), fontSize: 15),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            suffixIcon: GestureDetector(
+                              onTap: () => setState(() =>
+                                  _obscurePassword = !_obscurePassword),
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 14),
+                                child: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: const Color(0xFF9E9CBB),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                            suffixIconConstraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Минимум 6 символов',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black.withOpacity(0.4),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     // ── Ошибка ───────────────────────────────
                     if (_error != null) ...[
@@ -280,10 +381,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
   }
 }
 
-// ─────────────────────────────────────────────
-// Поле ввода
-// ─────────────────────────────────────────────
-
+// ─── Поле ввода ──────────────────────────────────────────────
 class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -318,22 +416,18 @@ class _InputField extends StatelessWidget {
         style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF9E9CBB), fontSize: 15),
+          hintStyle:
+              const TextStyle(color: Color(0xFF9E9CBB), fontSize: 15),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+              horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────
-// Кнопка «Продолжить»
-// ─────────────────────────────────────────────
-
+// ─── Кнопка «Продолжить» ─────────────────────────────────────
 class _ContinueButton extends StatefulWidget {
   final bool loading;
   final bool enabled;
@@ -355,7 +449,8 @@ class _ContinueButtonState extends State<_ContinueButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: widget.enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapDown:
+          widget.enabled ? (_) => setState(() => _pressed = true) : null,
       onTapUp: widget.enabled
           ? (_) {
               setState(() => _pressed = false);
